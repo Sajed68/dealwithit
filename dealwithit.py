@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 import dlib
-from matplotlib import cm, pyplot as plt
+# from matplotlib import cm, pyplot as plt
 from imutils.face_utils import visualize_facial_landmarks, shape_to_np
 from imutils import rotate, rotate_bound
 from PIL import Image
@@ -73,6 +73,7 @@ def prepare_glass(shape1):
 
 def save_pics(shape):
     fg = [];mk=[];al=[]; h=[]; x=[]; y=[]; Range = []
+    N = len(shape)
     for shape1 in shape:
         fg1, mk1, al1, h1, x1, y1 = prepare_glass(shape1)
         fg.append(fg1)
@@ -122,7 +123,7 @@ def save_pics(shape):
         steps += 1
 
     bg = Image.fromarray(I_RGB)
-    for k in range(2):
+    for k in range(N):
         fg1 = fg[k]
         mk1 = mk[k]
         x1 = x[k]
@@ -165,12 +166,16 @@ mask = cv2.imread('sunglasses_mask.png',0)
 
 # detect face:
 faces = detector(gray)
-shape1 = predictor(gray, faces[0])
-shape2 = predictor(gray, faces[1])
+numb_faces = len(faces)
+shapes = []
+for n in range(numb_faces):
+    shape = predictor(gray, faces[n])
+    #shape2 = predictor(gray, faces[1])
 
-shape1 = shape_to_np(shape1)
-shape2 = shape_to_np(shape2)
-#shape1 = shape2
+    shape = shape_to_np(shape)
+    #shape2 = shape_to_np(shape2)
+    #shape1 = shape2
+    shapes.append(shape) # now I added
 
 # opt:
 #VIS = visualize_facial_landmarks(I_RGB, shape1)
@@ -180,6 +185,6 @@ shape2 = shape_to_np(shape2)
 #plt.imshow(VIS);
 #plt.show()
 
-j, fps = save_pics([shape1, shape2])
+j, fps = save_pics(shapes)
 
 create_gif(j, fps)
