@@ -1,3 +1,5 @@
+print('This is "Deal With It" command line app', flush=True)
+print('importing needed packages...', flush=True)
 import numpy as np
 import cv2
 import dlib
@@ -93,9 +95,10 @@ def save_pics(shape):
 
     steps = 0
     finished = []
-    
+    Y = I_RGB.shape[1]
+    K = cv2.putText(I_RGB.copy(), 'github.com/Sajed68/dealwithit', (100, Y - 100), cv2.FONT_HERSHEY_SIMPLEX, 1, tuple(colors[i].tolist()))
     for l in range(max(L)):
-        bg = Image.fromarray(I_RGB)
+        bg = Image.fromarray(K)
         if finished != []:
             for k in finished:
                 fg1 = fg[k]
@@ -117,12 +120,13 @@ def save_pics(shape):
             bg.paste(fg1, (x1, y1),mk1)
 
         #pic = np.array(bg.getdata()).reshape(W, H, C).astype(np.uint8)
-        pic = bg.resize((H//2, W//2))
+        #pic = bg.resize((H//2, W//2)) ##TODO
+        pic = bg.resize((H, W))
         pic.save('./tmp/'+('%5d'%j).replace(' ', '0')+ '.jpg')
         j += 1
         steps += 1
 
-    bg = Image.fromarray(I_RGB)
+    bg = Image.fromarray(K)
     for k in range(N):
         fg1 = fg[k]
         mk1 = mk[k]
@@ -131,16 +135,17 @@ def save_pics(shape):
         bg.paste(fg1, (x1, y1),mk1)
     #bg.paste(fg, (x, y-h//2),mk)
     #pic = np.array(bg.getdata()).reshape(W, H, C).astype(np.uint8)
-    pic = bg.resize((H//2, W//2))
+    pic = bg.resize((H, W)) ##TODO
     pic.save('./tmp/'+('%5d'%j).replace(' ', '0')+ '.jpg')
     return j, max(L)
 
-
+print('loading face detector model for dlib package...')
 # load face detector model
 detector = dlib.get_frontal_face_detector()
 model = 'shape_predictor_68_face_landmarks.dat'
 predictor = dlib.shape_predictor(model)
 
+print('waing for loading an image ...')
 # load image:
 address = tk.filedialog.askopenfile().name
 
@@ -164,10 +169,40 @@ mask = cv2.imread('sunglasses_mask.png',0)
 #plt.imshow(glass)
 #plt.show()
 
+print('detecting faces ...')
 # detect face:
 faces = detector(gray)
 numb_faces = len(faces)
 shapes = []
+if numb_faces == 0:
+    print("There's now faces here. good luck.")
+    sys.exit()
+
+##TODO select which faces:
+print('Select which faces you want to deal with them?')
+
+key = -1
+Enter = ord('\n') # == 10
+colors = np.random.randint(0, 256, size=(numb_faces, 3))  
+selected_faces = []
+number =''
+while key != Enter:
+    K = I.copy()
+    for i in range(numb_faces):
+        x1, y1 = faces[i].tl_corner().x, faces[i].tl_corner().y
+        pt1 = (x1, y1)
+        x2, y2 = faces[i].br_corner().x, faces[i].br_corner().y
+        pt2 = (x2, y2)
+        cv2.rectangle(K, pt1, pt2, tuple(colors[i].tolist()), 2)
+        K = cv2.putText(K, 'selected', (x1, y1), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.8, tuple(colors[i].tolist()))
+    cv2.imshow('Select one of those faces..., then press Enter', K)
+    key = cv2.waitKey()
+    if 48 <= key <= 58:
+        number = number + str(int(key - 48))
+        
+cv2.destroyAllWindows()
+
+print('processing ...')
 for n in range(numb_faces):
     shape = predictor(gray, faces[n])
     #shape2 = predictor(gray, faces[1])
@@ -184,7 +219,8 @@ for n in range(numb_faces):
 #fig=plt.figure(figsize=(7,7), dpi= 80, facecolor='w', edgecolor='k')
 #plt.imshow(VIS);
 #plt.show()
-
+print('saving pics in temp folder ...')
 j, fps = save_pics(shapes)
-
+print('creating gif using image magic ...')
 create_gif(j, fps)
+print("Deal with it ...\n I'm done, have nice day... :-)")

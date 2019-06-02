@@ -4,8 +4,8 @@ this is a simple python scripy that you can deal with it!
 
 ### requirements:
 > dlib  
-> opencv
-> imutils
+> opencv  
+> imutils  
 
 
 ### IMPORTANT NOTE:
