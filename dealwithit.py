@@ -27,10 +27,11 @@ def create_gif(last, fps): #(inputPath, outputPath, delay, finalDelay, loop):
     #cmd = "convert -delay {} {} -delay {} {} -loop {} {}".format(
     #    delay, inputPath.join('/*'), finalDelay, lastPath, loop,
     #    outputPath)
-    cmd = "convert  -delay 1x"+str(30)+ " ./tmp/* -loop 0  animation.gif"
+    print('try to save file ', NAME+ '.gif')    
+    cmd = "convert  -delay 1x"+str(30)+ " ./tmpdealwithit/* -loop 0  " + NAME + ".gif"
     os.system(cmd)
-    last = './tmp/'+('%5d'%last).replace(' ', '0')+ '.jpg'
-    cmd = "convert  animation.gif -delay 100 " + last + " -loop 0 animation.gif"
+    last = './tmpdealwithit/'+('%5d'%last).replace(' ', '0')+ '.jpg'
+    cmd = "convert  " + NAME + ".gif -delay 100 " + last + " -loop 0 " + NAME + ".gif"
     os.system(cmd)
 
 
@@ -121,8 +122,8 @@ def save_pics(shape):
 
         #pic = np.array(bg.getdata()).reshape(W, H, C).astype(np.uint8)
         #pic = bg.resize((H//2, W//2)) ##TODO
-        pic = bg.resize((H, W))
-        pic.save('./tmp/'+('%5d'%j).replace(' ', '0')+ '.jpg')
+        pic = bg.resize((H//2, W//2))
+        pic.save('./tmpdealwithit/'+('%5d'%j).replace(' ', '0')+ '.jpg')
         j += 1
         steps += 1
 
@@ -135,8 +136,8 @@ def save_pics(shape):
         bg.paste(fg1, (x1, y1),mk1)
     #bg.paste(fg, (x, y-h//2),mk)
     #pic = np.array(bg.getdata()).reshape(W, H, C).astype(np.uint8)
-    pic = bg.resize((H, W)) ##TODO
-    pic.save('./tmp/'+('%5d'%j).replace(' ', '0')+ '.jpg')
+    pic = bg.resize((H//2, W//2)) ##TODO
+    pic.save('./tmpdealwithit/'+('%5d'%j).replace(' ', '0')+ '.jpg')
     return j, max(L)
 
 print('loading face detector model for dlib package...')
@@ -148,9 +149,11 @@ predictor = dlib.shape_predictor(model)
 print('waing for loading an image ...')
 # load image:
 address = tk.filedialog.askopenfile().name
+NAME = address.split('/')[-1].split('.')[0]
 
 I = cv2.imread(address)
 if I is None:
+    print('there is no face in this picture... :(')
     sys.exit()
 
 gray = cv2.cvtColor(I, cv2.COLOR_BGR2GRAY)
@@ -185,7 +188,8 @@ key = -1
 Enter = ord('\n') # == 10
 colors = np.random.randint(0, 256, size=(numb_faces, 3))  
 selected_faces = []
-number =''
+selected = -1
+number = 0
 while key != Enter:
     K = I.copy()
     for i in range(numb_faces):
@@ -193,12 +197,27 @@ while key != Enter:
         pt1 = (x1, y1)
         x2, y2 = faces[i].br_corner().x, faces[i].br_corner().y
         pt2 = (x2, y2)
-        cv2.rectangle(K, pt1, pt2, tuple(colors[i].tolist()), 2)
-        K = cv2.putText(K, 'selected', (x1, y1), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.8, tuple(colors[i].tolist()))
+        if i == number:
+            cv2.rectangle(K, pt1, pt2, tuple(colors[i].tolist()), 2)
+        if selected_faces.count(i) != 0:
+            K = cv2.putText(K, 'selected', (x1, y1), cv2.FONT_HERSHEY_SCRIPT_SIMPLEX, 0.8, tuple(colors[i].tolist()))
     cv2.imshow('Select one of those faces..., then press Enter', K)
     key = cv2.waitKey()
-    if 48 <= key <= 58:
-        number = number + str(int(key - 48))
+    if key == 83:
+        number += 1
+        number %= numb_faces
+    if key == ord(' '):
+        if selected_faces.count(number) > 0:
+            selected_faces.remove(number)
+        else:
+            selected_faces.append(number)
+        selected_faces = list(set(selected_faces))
+else:
+    if selected_faces == []:
+        selected_faces = list(range(numb_faces))
+    else:
+        faces = [faces[i] for i in selected_faces]
+        numb_faces = len(faces)
         
 cv2.destroyAllWindows()
 
@@ -220,7 +239,9 @@ for n in range(numb_faces):
 #plt.imshow(VIS);
 #plt.show()
 print('saving pics in temp folder ...')
+os.system('mkdir ./tmpdealwithit')
 j, fps = save_pics(shapes)
 print('creating gif using image magic ...')
 create_gif(j, fps)
+os.system('rm -d -r ./tmpdealwithit')
 print("Deal with it ...\n I'm done, have nice day... :-)")
